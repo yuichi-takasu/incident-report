@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>インシデント・アクシデント報告書</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+      background: #f5fbf5;
+      color: #333;
+      font-size: 15px;
+      padding-bottom: 40px;
+    }
+
+    header {
+      background: #5aaa5f;
+      color: white;
+      padding: 16px 20px;
+      text-align: center;
+    }
+    header h1 { font-size: 17px; font-weight: bold; }
+    header p  { font-size: 12px; margin-top: 4px; opacity: 0.85; }
+
+    .notice {
+      background: #f4faf0;
+      border-left: 4px solid #8bc34a;
+      margin: 16px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #5aaa5f;
+      border-radius: 4px;
+    }
+
+    .section {
+      background: white;
+      margin: 12px 16px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .section-header {
+      background: #5aaa5f;
+      color: white;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .field-group {
+      padding: 14px 16px;
+      border-bottom: 1px solid #eee;
+    }
+    .field-group:last-child { border-bottom: none; }
+
+    label.field-label {
+      display: block;
+      font-weight: bold;
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 8px;
+    }
+
+    .required::after {
+      content: ' ※必須';
+      color: #e74c3c;
+      font-size: 11px;
+      font-weight: normal;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    input[type="number"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+      font-family: inherit;
+      background: #fafafa;
+    }
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    input[type="number"]:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #8bc34a;
+      background: white;
+    }
+
+    textarea { min-height: 100px; resize: vertical; }
+
+    .radio-group, .check-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .radio-group label, .check-group label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 8px 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      background: #fafafa;
+    }
+    .radio-group label:hover, .check-group label:hover { background: #f4faf0; }
+    .radio-group input, .check-group input {
+      margin-top: 2px;
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      accent-color: #5aaa5f;
+    }
+
+    .inline-fields {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .inline-fields > div { flex: 1; min-width: 120px; }
+    .inline-fields label.field-label { margin-bottom: 6px; }
+
+    .sub-section {
+      background: #f8f9fa;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .sub-section-title {
+      font-size: 13px;
+      font-weight: bold;
+      color: #5aaa5f;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #d4edda;
+    }
+
+    .submit-area {
+      padding: 20px 16px;
+      text-align: center;
+    }
+    button[type="submit"] {
+      background: #5aaa5f;
+      color: white;
+      border: none;
+      padding: 16px 48px;
+      font-size: 17px;
+      font-family: inherit;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    button[type="submit"]:active { background: #3d7a41; }
+
+    .hint { font-size: 12px; color: #888; margin-top: 6px; }
+
+
+    .error-msg {
+      color: #c62828;
+      font-size: 12px;
+      margin-top: 6px;
+      padding: 6px 10px;
+      background: #ffebee;
+      border-left: 3px solid #c62828;
+      border-radius: 4px;
+    }
+    .field-has-error .radio-group label,
+    .field-has-error input[type="text"],
+    .field-has-error input[type="date"],
+    .field-has-error input[type="number"],
+    .field-has-error textarea {
+      border-color: #c62828 !important;
+    }
+    #error-summary {
+      background: #ffebee;
+      border: 1px solid #c62828;
+      border-radius: 8px;
+      margin: 0 16px 12px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #c62828;
+      display: none;
+    }
+    #error-summary ul { margin: 6px 0 0 16px; }
+    #error-summary li { margin-bottom: 2px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>インシデント・アクシデント報告書</h1>
+  <p>この報告を提出することにより、個人の評価に影響することはありません</p>
+</header>
+
+<div class="notice">
+  ※「事故の内容」および「概要」以外は、必ず1項目につき1つ、または複数選択してください。
+</div>
+
+<form novalidate id="reportForm">
+
+
+
+  <div id="error-summary"><strong>⚠ 以下の必須項目が未入力です：</strong><ul id="error-list"></ul></div>
+
+  <!-- ① レベル -->
+  <div class="section">
+    <div class="section-header">レベル</div>
+    <div class="field-group">
+      <label class="field-label">インシデント・アクシデントのレベルを選択してください</label>
+      <p class="hint">※ 3b 以上は臨時委員会を開催し、後日別紙報告書も作成</p>
+      <div class="radio-group" style="margin-top:10px;">
+        <label><input type="radio" name="レベル" value="①0（インシデント）" required> ① 0（インシデント）</label>
+        <label><input type="radio" name="レベル" value="②1（インシデント）"> ② 1（インシデント）</label>
+        <label><input type="radio" name="レベル" value="③2（インシデント）"> ③ 2（インシデント）</label>
+        <label><input type="radio" name="レベル" value="④3a（アクシデント）"> ④ 3a（アクシデント）</label>
+        <label><input type="radio" name="レベル" value="⑤3b（アクシデント）"> ⑤ 3b（アクシデント）</label>
+        <label><input type="radio" name="レベル" value="⑥4（アクシデント）"> ⑥ 4（アクシデント）</label>
+        <label><input type="radio" name="レベル" value="⑦5（アクシデント）"> ⑦ 5（アクシデント）</label>
+        <label><input type="radio" name="レベル" value="⑧その他"> ⑧ その他</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② 発生情報 -->
+  <div class="section">
+    <div class="section-header">発生情報</div>
+
+    <div class="field-group">
+      <label class="field-label">発生年月日</label>
+      <input type="date" name="発生年月日" required>
+      <div class="radio-group" style="margin-top:10px;">
+        <label><input type="radio" name="発生曜日区分" value="平日" required> 平日</label>
+        <label><input type="radio" name="発生曜日区分" value="土曜"> 土曜</label>
+        <label><input type="radio" name="発生曜日区分" value="日祝"> 日曜・祝日</label>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">発生時間帯</label>
+      <div class="radio-group">
+        <label><input type="radio" name="発生時間帯" value="①8:31-17:30" required> ① 8:31 〜 17:30</label>
+        <label><input type="radio" name="発生時間帯" value="②17:31-21:00"> ② 17:31 〜 21:00</label>
+        <label><input type="radio" name="発生時間帯" value="③21:01-6:00"> ③ 21:01 〜 6:00</label>
+        <label><input type="radio" name="発生時間帯" value="④6:01-8:30"> ④ 6:01 〜 8:30</label>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">当該部署</label>
+      <div class="radio-group">
+        <label><input type="radio" name="当該部署" value="①医師" required> ① 医師</label>
+        <label><input type="radio" name="当該部署" value="②外来"> ② 外来</label>
+        <label><input type="radio" name="当該部署" value="③2階"> ③ 2階</label>
+        <label><input type="radio" name="当該部署" value="④3階"> ④ 3階</label>
+        <label><input type="radio" name="当該部署" value="⑤薬局"> ⑤ 薬局</label>
+        <label><input type="radio" name="当該部署" value="⑥栄養"> ⑥ 栄養</label>
+        <label><input type="radio" name="当該部署" value="⑦放射線"> ⑦ 放射線</label>
+        <label><input type="radio" name="当該部署" value="⑧検査"> ⑧ 検査</label>
+        <label><input type="radio" name="当該部署" value="⑨リハビリ"> ⑨ リハビリ</label>
+        <label><input type="radio" name="当該部署" value="⑩医事・総務経理"> ⑩ 医事・総務経理</label>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">発生場所</label>
+      <div class="radio-group">
+        <label><input type="radio" name="発生場所" value="①診察室" required> ① 診察室</label>
+        <label><input type="radio" name="発生場所" value="②待合室"> ② 待合室</label>
+        <label><input type="radio" name="発生場所" value="③窓口"> ③ 窓口</label>
+        <label><input type="radio" name="発生場所" value="④事務室"> ④ 事務室</label>
+        <label><input type="radio" name="発生場所" value="⑤検査室"> ⑤ 検査室</label>
+        <label><input type="radio" name="発生場所" value="⑥リハ室"> ⑥ リハ室</label>
+        <label><input type="radio" name="発生場所" value="⑦放射線室"> ⑦ 放射線室</label>
+        <label><input type="radio" name="発生場所" value="⑧栄養・厨房"> ⑧ 栄養・厨房</label>
+        <label><input type="radio" name="発生場所" value="⑨病室"> ⑨ 病室</label>
+        <label><input type="radio" name="発生場所" value="⑩廊下・トイレ"> ⑩ 廊下・トイレ</label>
+        <label><input type="radio" name="発生場所" value="⑪浴室"> ⑪ 浴室</label>
+        <label><input type="radio" name="発生場所" value="⑫ナースステーション"> ⑫ ナースステーション</label>
+        <label><input type="radio" name="発生場所" value="⑬手術室"> ⑬ 手術室</label>
+        <label><input type="radio" name="発生場所" value="⑭薬局"> ⑭ 薬局</label>
+        <label><input type="radio" name="発生場所" value="⑮屋外"> ⑮ 屋外</label>
+        <label><input type="radio" name="発生場所" value="⑯その他"> ⑯ その他</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 患者情報 -->
+  <div class="section">
+    <div class="section-header">患者情報</div>
+
+    <div class="field-group">
+      <div class="inline-fields">
+        <div>
+          <label class="field-label">患者氏名</label>
+          <input type="text" name="患者氏名" placeholder="氏名" required>
+        </div>
+        <div>
+          <label class="field-label">年齢</label>
+          <input type="number" name="患者年齢" placeholder="歳" min="0" max="120" required>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">性別</label>
+      <div class="radio-group">
+        <label><input type="radio" name="患者性別" value="男" required> ① 男</label>
+        <label><input type="radio" name="患者性別" value="女"> ② 女</label>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">主病名</label>
+      <input type="text" name="主病名" placeholder="主病名を入力">
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">入院状況</label>
+      <div class="radio-group">
+        <label><input type="radio" name="入院状況" value="①入院中（14日以内）" required> ① 入院中（14日以内）</label>
+        <label><input type="radio" name="入院状況" value="②入院中（1ヶ月以内）"> ② 入院中（1ヶ月以内）</label>
+        <label><input type="radio" name="入院状況" value="③入院中（3ヵ月以内）"> ③ 入院中（3ヵ月以内）</label>
+        <label><input type="radio" name="入院状況" value="④入院中（1年以内）"> ④ 入院中（1年以内）</label>
+        <label><input type="radio" name="入院状況" value="⑤入院中（1年以上）"> ⑤ 入院中（1年以上）</label>
+        <label><input type="radio" name="入院状況" value="⑥外来"> ⑥ 外来</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 報告者・当事者情報 -->
+  <div class="section">
+    <div class="section-header">報告者・当事者情報</div>
+
+    <div class="field-group">
+      <label class="field-label">報告者の区分</label>
+      <div class="radio-group">
+        <label><input type="radio" name="報告者区分" value="①当事者本人" required> ① 当事者本人</label>
+        <label><input type="radio" name="報告者区分" value="②当事者以外の職員"> ② 当事者以外の職員</label>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">報告者氏名</label>
+      <input type="text" name="報告者氏名" placeholder="氏名" required>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">職種</label>
+      <div class="radio-group">
+        <label><input type="radio" name="職種" value="①医師" required> ① 医師</label>
+        <label><input type="radio" name="職種" value="②看護師・准看護師"> ② 看護師・准看護師</label>
+        <label><input type="radio" name="職種" value="③看護補助者"> ③ 看護補助者</label>
+        <label><input type="radio" name="職種" value="④外来・病棟事務"> ④ 外来・病棟事務</label>
+        <label><input type="radio" name="職種" value="⑤薬剤師"> ⑤ 薬剤師</label>
+        <label><input type="radio" name="職種" value="⑥薬局事務"> ⑥ 薬局事務</label>
+        <label><input type="radio" name="職種" value="⑦栄養士・調理士"> ⑦ 栄養士・調理士</label>
+        <label><input type="radio" name="職種" value="⑧放射線技師"> ⑧ 放射線技師</label>
+        <label><input type="radio" name="職種" value="⑨検査技師"> ⑨ 検査技師</label>
+        <label><input type="radio" name="職種" value="⑩リハビリ・マッサージ師"> ⑩ リハビリ・マッサージ師</label>
+        <label><input type="radio" name="職種" value="⑪医事"> ⑪ 医事</label>
+        <label><input type="radio" name="職種" value="⑫総務経理"> ⑫ 総務経理</label>
+        <label><input type="radio" name="職種" value="⑬医療連携"> ⑬ 医療連携</label>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">経験年数</label>
+      <div class="radio-group">
+        <label><input type="radio" name="経験年数" value="①1年未満" required> ① 1年未満</label>
+        <label><input type="radio" name="経験年数" value="②1〜3年"> ② 1〜3年</label>
+        <label><input type="radio" name="経験年数" value="③4〜9年"> ③ 4〜9年</label>
+        <label><input type="radio" name="経験年数" value="④10年以上"> ④ 10年以上</label>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">心身状態（複数選択可）</label>
+      <div class="check-group">
+        <label><input type="checkbox" name="心身状態" value="①普通"> ① 普通</label>
+        <label><input type="checkbox" name="心身状態" value="②疲労"> ② 疲労</label>
+        <label><input type="checkbox" name="心身状態" value="③睡眠不足"> ③ 睡眠不足</label>
+        <label><input type="checkbox" name="心身状態" value="④体調不良"> ④ 体調不良</label>
+        <label><input type="checkbox" name="心身状態" value="⑤動揺・焦り"> ⑤ 動揺・焦り</label>
+        <label><input type="checkbox" name="心身状態" value="⑥イライラ"> ⑥ イライラ</label>
+        <label><input type="checkbox" name="心身状態" value="⑦アルコール"> ⑦ アルコール</label>
+        <label><input type="checkbox" name="心身状態" value="⑧その他"> ⑧ その他</label>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">勤務状態（複数選択可）</label>
+      <div class="check-group">
+        <label><input type="checkbox" name="勤務状態" value="①普通"> ① 普通</label>
+        <label><input type="checkbox" name="勤務状態" value="②他に意識が集中"> ② 他に意識が集中</label>
+        <label><input type="checkbox" name="勤務状態" value="③複雑作業"> ③ 複雑作業</label>
+        <label><input type="checkbox" name="勤務状態" value="④同時進行"> ④ 同時進行</label>
+        <label><input type="checkbox" name="勤務状態" value="⑤業務中断再開"> ⑤ 業務中断再開</label>
+        <label><input type="checkbox" name="勤務状態" value="⑥業務繁忙"> ⑥ 業務繁忙</label>
+        <label><input type="checkbox" name="勤務状態" value="⑦人員不足"> ⑦ 人員不足</label>
+        <label><input type="checkbox" name="勤務状態" value="⑧その他"> ⑧ その他</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑤ 事故の内容 -->
+  <div class="section">
+    <div class="section-header">事故の内容</div>
+    <div class="field-group">
+      <p class="hint">該当するカテゴリをすべて選択・入力してください。</p>
+
+      <!-- 治療・手術・麻酔 -->
+      <div class="sub-section">
+        <div class="sub-section-title">治療・手術・麻酔</div>
+        <div class="check-group">
+          <label><input type="checkbox" name="治療手術麻酔" value="①患者誤認"> ① 患者誤認</label>
+          <label><input type="checkbox" name="治療手術麻酔" value="②部位違い"> ② 部位違い</label>
+          <label><input type="checkbox" name="治療手術麻酔" value="③内容誤認"> ③ 内容誤認</label>
+          <label><input type="checkbox" name="治療手術麻酔" value="④術中バリアンス"> ④ 術中バリアンス</label>
+          <label><input type="checkbox" name="治療手術麻酔" value="⑤その他"> ⑤ その他</label>
+        </div>
+      </div>
+
+      <!-- 転倒・転落 -->
+      <div class="sub-section">
+        <div class="sub-section-title">転倒・転落</div>
+        <label class="field-label" style="margin-bottom:6px;">状況</label>
+        <div class="radio-group">
+          <label><input type="radio" name="転倒転落状況" value="①直接関与"> ① 直接関与</label>
+          <label><input type="radio" name="転倒転落状況" value="②患者行動"> ② 患者行動</label>
+          <label><input type="radio" name="転倒転落状況" value="③その他"> ③ その他</label>
+        </div>
+        <label class="field-label" style="margin-top:12px; margin-bottom:6px;">転倒リスクスコア</label>
+        <div class="radio-group">
+          <label><input type="radio" name="転倒リスクスコア" value="①Ⅰ"> ① Ⅰ</label>
+          <label><input type="radio" name="転倒リスクスコア" value="②Ⅱ"> ② Ⅱ</label>
+          <label><input type="radio" name="転倒リスクスコア" value="③Ⅲ"> ③ Ⅲ</label>
+        </div>
+        <label class="field-label" style="margin-top:12px; margin-bottom:6px;">身体拘束</label>
+        <div class="radio-group">
+          <label><input type="radio" name="身体拘束" value="有"> 有</label>
+          <label><input type="radio" name="身体拘束" value="無"> 無</label>
+        </div>
+        <label class="field-label" style="margin-top:12px; margin-bottom:6px;">排泄との関係</label>
+        <div class="radio-group">
+          <label><input type="radio" name="排泄との関係" value="有"> 有</label>
+          <label><input type="radio" name="排泄との関係" value="無"> 無</label>
+        </div>
+        <label class="field-label" style="margin-top:12px; margin-bottom:6px;">患者の特徴（複数選択可）</label>
+        <div class="check-group">
+          <label><input type="checkbox" name="患者の特徴" value="①筋力低下"> ① 筋力低下</label>
+          <label><input type="checkbox" name="患者の特徴" value="②感覚・運動機能の障害・低下"> ② 感覚・運動機能の障害・低下</label>
+          <label><input type="checkbox" name="患者の特徴" value="③認知症"> ③ 認知症</label>
+          <label><input type="checkbox" name="患者の特徴" value="④眠剤・向精神薬等の服用中"> ④ 眠剤・向精神薬等の服用中</label>
+          <label><input type="checkbox" name="患者の特徴" value="⑤その他"> ⑤ その他</label>
+        </div>
+        <label class="field-label" style="margin-top:12px; margin-bottom:6px;">外傷の有無</label>
+        <div class="radio-group">
+          <label><input type="radio" name="転倒外傷" value="①外傷なし"> ① 外傷なし</label>
+          <label><input type="radio" name="転倒外傷" value="②擦過傷"> ② 擦過傷</label>
+          <label><input type="radio" name="転倒外傷" value="③打撲"> ③ 打撲</label>
+          <label><input type="radio" name="転倒外傷" value="④表皮剥離"> ④ 表皮剥離</label>
+          <label><input type="radio" name="転倒外傷" value="⑤骨折"> ⑤ 骨折</label>
+          <label><input type="radio" name="転倒外傷" value="⑥その他"> ⑥ その他</label>
+        </div>
+      </div>
+
+      <!-- 外傷（転倒転落以外） -->
+      <div class="sub-section">
+        <div class="sub-section-title">外傷（転倒・転落以外）</div>
+        <label class="field-label" style="margin-bottom:6px;">内容（複数選択可）</label>
+        <div class="check-group">
+          <label><input type="checkbox" name="外傷内容" value="①擦過傷"> ① 擦過傷</label>
+          <label><input type="checkbox" name="外傷内容" value="②打撲"> ② 打撲</label>
+          <label><input type="checkbox" name="外傷内容" value="③表皮剥離"> ③ 表皮剥離</label>
+          <label><input type="checkbox" name="外傷内容" value="④骨折"> ④ 骨折</label>
+          <label><input type="checkbox" name="外傷内容" value="⑤熱傷"> ⑤ 熱傷</label>
+          <label><input type="checkbox" name="外傷内容" value="⑥疼痛"> ⑥ 疼痛</label>
+          <label><input type="checkbox" name="外傷内容" value="⑦その他"> ⑦ その他</label>
+        </div>
+        <label class="field-label" style="margin-top:12px; margin-bottom:6px;">起点（複数選択可）</label>
+        <div class="check-group">
+          <label><input type="checkbox" name="外傷起点" value="①体位交換"> ① 体位交換</label>
+          <label><input type="checkbox" name="外傷起点" value="②寝衣・オムツ交換"> ② 寝衣・オムツ交換</label>
+          <label><input type="checkbox" name="外傷起点" value="③移動"> ③ 移動</label>
+          <label><input type="checkbox" name="外傷起点" value="④入浴介助"> ④ 入浴介助</label>
+          <label><input type="checkbox" name="外傷起点" value="⑤処置（注射点滴含）"> ⑤ 処置（注射点滴含）</label>
+          <label><input type="checkbox" name="外傷起点" value="⑥リハビリ"> ⑥ リハビリ</label>
+          <label><input type="checkbox" name="外傷起点" value="⑦検査"> ⑦ 検査</label>
+          <label><input type="checkbox" name="外傷起点" value="⑧その他"> ⑧ その他</label>
+        </div>
+      </div>
+
+      <!-- チューブ・カテーテル -->
+      <div class="sub-section">
+        <div class="sub-section-title">チューブ・カテーテル</div>
+        <label class="field-label" style="margin-bottom:6px;">種類（複数選択可）</label>
+        <div class="check-group">
+          <label><input type="checkbox" name="チューブ種類" value="①末梢ルート"> ① 末梢ルート</label>
+          <label><input type="checkbox" name="チューブ種類" value="②中心静脈カテーテル"> ② 中心静脈カテーテル</label>
+          <label><input type="checkbox" name="チューブ種類" value="③経鼻胃管"> ③ 経鼻胃管</label>
+          <label><input type="checkbox" name="チューブ種類" value="④胃瘻"> ④ 胃瘻</label>
+          <label><input type="checkbox" name="チューブ種類" value="⑤膀胱留置カテーテル"> ⑤ 膀胱留置カテーテル</label>
+          <label><input type="checkbox" name="チューブ種類" value="⑥気切カニューレ"> ⑥ 気切カニューレ</label>
+          <label><input type="checkbox" name="チューブ種類" value="⑦術後ドレーン"> ⑦ 術後ドレーン</label>
+          <label><input type="checkbox" name="チューブ種類" value="⑧胸腔ドレーン"> ⑧ 胸腔ドレーン</label>
+          <label><input type="checkbox" name="チューブ種類" value="⑨その他"> ⑨ その他</label>
+        </div>
+        <label class="field-label" style="margin-top:12px; margin-bottom:6px;">内容（複数選択可）</label>
+        <div class="check-group">
+          <label><input type="checkbox" name="チューブ内容" value="①自己抜去"> ① 自己抜去</label>
+          <label><input type="checkbox" name="チューブ内容" value="②血管外漏出"> ② 血管外漏出</label>
+          <label><input type="checkbox" name="チューブ内容" value="③接続の緩み外れ"> ③ 接続の緩み外れ</label>
+          <label><input type="checkbox" name="チューブ内容" value="④三活方向"> ④ 三活方向</label>
+          <label><input type="checkbox" name="チューブ内容" value="⑤クランプの開閉"> ⑤ クランプの開閉</label>
+          <label><input type="checkbox" name="チューブ内容" value="⑥その他"> ⑥ その他</label>
+        </div>
+      </div>
+
+      <!-- 薬剤 -->
+      <div class="sub-section">
+        <div class="sub-section-title">薬剤</div>
+        <label class="field-label" style="margin-bottom:6px;">種類（複数選択可）</label>
+        <div class="check-group">
+          <label><input type="checkbox" name="薬剤種類" value="①注射点滴"> ① 注射点滴</label>
+          <label><input type="checkbox" name="薬剤種類" value="②内服"> ② 内服</label>
+          <label><input type="checkbox" name="薬剤種類" value="③外用"> ③ 外用</label>
+          <label><input type="checkbox" name="薬剤種類" value="④麻薬"> ④ 麻薬</label>
+          <label><input type="checkbox" name="薬剤種類" value="⑤輸血製剤"> ⑤ 輸血製剤</label>
+          <label><input type="checkbox" name="薬剤種類" value="⑥血液製剤"> ⑥ 血液製剤</label>
+          <label><input type="checkbox" name="薬剤種類" value="⑦その他"> ⑦ その他</label>
+        </div>
+        <label class="field-label" style="margin-top:12px; margin-bottom:6px;">内容（複数選択可）</label>
+        <div class="check-group">
+          <label><input type="checkbox" name="薬剤内容" value="①投与忘れ"> ① 投与忘れ</label>
+          <label><input type="checkbox" name="薬剤内容" value="②服薬確認忘れ"> ② 服薬確認忘れ</label>
+          <label><input type="checkbox" name="薬剤内容" value="③患者違い"> ③ 患者違い</label>
+          <label><input type="checkbox" name="薬剤内容" value="④薬剤違い"> ④ 薬剤違い</label>
+          <label><input type="checkbox" name="薬剤内容" value="⑤投与方法"> ⑤ 投与方法</label>
+          <label><input type="checkbox" name="薬剤内容" value="⑥投与量"> ⑥ 投与量</label>
+          <label><input type="checkbox" name="薬剤内容" value="⑦投与時間"> ⑦ 投与時間</label>
+          <label><input type="checkbox" name="薬剤内容" value="⑧投与速度"> ⑧ 投与速度</label>
+          <label><input type="checkbox" name="薬剤内容" value="⑨輸血内容違い"> ⑨ 輸血内容違い</label>
+          <label><input type="checkbox" name="薬剤内容" value="⑩血液製剤違い"> ⑩ 血液製剤違い</label>
+          <label><input type="checkbox" name="薬剤内容" value="⑪その他"> ⑪ その他</label>
+        </div>
+        <label class="field-label" style="margin-top:12px; margin-bottom:6px;">業務プロセス（複数選択可）</label>
+        <div class="check-group">
+          <label><input type="checkbox" name="薬剤業務プロセス" value="①医師指示"> ① 医師指示</label>
+          <label><input type="checkbox" name="薬剤業務プロセス" value="②指示受け"> ② 指示受け</label>
+          <label><input type="checkbox" name="薬剤業務プロセス" value="③払い出し"> ③ 払い出し</label>
+          <label><input type="checkbox" name="薬剤業務プロセス" value="④予薬準備"> ④ 予薬準備</label>
+          <label><input type="checkbox" name="薬剤業務プロセス" value="⑤与薬中"> ⑤ 与薬中</label>
+          <label><input type="checkbox" name="薬剤業務プロセス" value="⑥与薬後"> ⑥ 与薬後</label>
+          <label><input type="checkbox" name="薬剤業務プロセス" value="⑦血液型確認"> ⑦ 血液型確認</label>
+          <label><input type="checkbox" name="薬剤業務プロセス" value="⑧交叉試験"> ⑧ 交叉試験</label>
+          <label><input type="checkbox" name="薬剤業務プロセス" value="⑨その他"> ⑨ その他</label>
+        </div>
+      </div>
+
+      <!-- 食事 -->
+      <div class="sub-section">
+        <div class="sub-section-title">食事</div>
+        <div class="check-group">
+          <label><input type="checkbox" name="食事" value="①指示と異なる形態・量・時間"> ① 指示と異なる形態・量・時間</label>
+          <label><input type="checkbox" name="食事" value="②患者間違い"> ② 患者間違い</label>
+          <label><input type="checkbox" name="食事" value="③異物混入"> ③ 異物混入</label>
+          <label><input type="checkbox" name="食事" value="④食待ち・食止め"> ④ 食待ち・食止め</label>
+          <label><input type="checkbox" name="食事" value="⑤誤指示"> ⑤ 誤指示</label>
+          <label><input type="checkbox" name="食事" value="⑥誤嚥・誤飲"> ⑥ 誤嚥・誤飲</label>
+          <label><input type="checkbox" name="食事" value="⑦未配膳"> ⑦ 未配膳</label>
+          <label><input type="checkbox" name="食事" value="⑧その他"> ⑧ その他</label>
+        </div>
+      </div>
+
+      <!-- 検査 -->
+      <div class="sub-section">
+        <div class="sub-section-title">検査</div>
+        <div class="check-group">
+          <label><input type="checkbox" name="検査" value="①患者違い"> ① 患者違い</label>
+          <label><input type="checkbox" name="検査" value="②部位違い"> ② 部位違い</label>
+          <label><input type="checkbox" name="検査" value="③内容違い"> ③ 内容違い</label>
+          <label><input type="checkbox" name="検査" value="④紛失"> ④ 紛失</label>
+          <label><input type="checkbox" name="検査" value="⑤容器違い"> ⑤ 容器違い</label>
+          <label><input type="checkbox" name="検査" value="⑥不適切な前処置"> ⑥ 不適切な前処置</label>
+          <label><input type="checkbox" name="検査" value="⑦その他"> ⑦ その他</label>
+        </div>
+      </div>
+
+      <!-- ME機器・医療器具 -->
+      <div class="sub-section">
+        <div class="sub-section-title">ME機器・医療器具</div>
+        <label class="field-label" style="margin-bottom:6px;">種類（複数選択可）</label>
+        <div class="check-group">
+          <label><input type="checkbox" name="ME機器種類" value="①モニター"> ① モニター</label>
+          <label><input type="checkbox" name="ME機器種類" value="②輸液・輸注ポンプ"> ② 輸液・輸注ポンプ</label>
+          <label><input type="checkbox" name="ME機器種類" value="③人工呼吸器"> ③ 人工呼吸器</label>
+          <label><input type="checkbox" name="ME機器種類" value="④心電図"> ④ 心電図</label>
+          <label><input type="checkbox" name="ME機器種類" value="⑤X-P・CT・MRI"> ⑤ X-P・CT・MRI</label>
+          <label><input type="checkbox" name="ME機器種類" value="⑥医療機器"> ⑥ 医療機器</label>
+          <label><input type="checkbox" name="ME機器種類" value="⑦その他"> ⑦ その他</label>
+        </div>
+        <label class="field-label" style="margin-top:12px; margin-bottom:6px;">内容（複数選択可）</label>
+        <div class="check-group">
+          <label><input type="checkbox" name="ME機器内容" value="①故障・不具合"> ① 故障・不具合</label>
+          <label><input type="checkbox" name="ME機器内容" value="②操作ミス"> ② 操作ミス</label>
+          <label><input type="checkbox" name="ME機器内容" value="③操作方法を知らなかった"> ③ 操作方法を知らなかった</label>
+          <label><input type="checkbox" name="ME機器内容" value="④その他"> ④ その他</label>
+        </div>
+      </div>
+
+      <!-- コミュニケーション -->
+      <div class="sub-section">
+        <div class="sub-section-title">コミュニケーション</div>
+        <div class="check-group">
+          <label><input type="checkbox" name="コミュニケーション" value="①接遇・態度"> ① 接遇・態度</label>
+          <label><input type="checkbox" name="コミュニケーション" value="②説明内容"> ② 説明内容</label>
+          <label><input type="checkbox" name="コミュニケーション" value="③治療や検査に対する不満"> ③ 治療や検査に対する不満</label>
+          <label><input type="checkbox" name="コミュニケーション" value="④医療費"> ④ 医療費</label>
+          <label><input type="checkbox" name="コミュニケーション" value="⑤施設や環境"> ⑤ 施設や環境</label>
+          <label><input type="checkbox" name="コミュニケーション" value="⑥診療拒否"> ⑥ 診療拒否</label>
+          <label><input type="checkbox" name="コミュニケーション" value="⑦待ち時間"> ⑦ 待ち時間</label>
+          <label><input type="checkbox" name="コミュニケーション" value="⑧その他"> ⑧ その他</label>
+        </div>
+      </div>
+
+      <!-- その他 -->
+      <div class="sub-section">
+        <div class="sub-section-title">その他</div>
+        <div class="check-group">
+          <label><input type="checkbox" name="事故その他" value="①喫煙・飲酒"> ① 喫煙・飲酒</label>
+          <label><input type="checkbox" name="事故その他" value="②盗難"> ② 盗難</label>
+          <label><input type="checkbox" name="事故その他" value="③破損"> ③ 破損</label>
+          <label><input type="checkbox" name="事故その他" value="④紛失"> ④ 紛失</label>
+          <label><input type="checkbox" name="事故その他" value="⑤離院"> ⑤ 離院</label>
+          <label><input type="checkbox" name="事故その他" value="⑥在庫不足"> ⑥ 在庫不足</label>
+          <label><input type="checkbox" name="事故その他" value="⑦必要書類不足"> ⑦ 必要書類不足</label>
+          <label><input type="checkbox" name="事故その他" value="⑧予期せぬ急変"> ⑧ 予期せぬ急変</label>
+          <label><input type="checkbox" name="事故その他" value="⑨自殺"> ⑨ 自殺</label>
+          <label><input type="checkbox" name="事故その他" value="⑩その他"> ⑩ その他</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑥ 発生の要因 -->
+  <div class="section">
+    <div class="section-header">発生の要因</div>
+    <div class="field-group">
+
+      <div class="sub-section">
+        <div class="sub-section-title">手順との関連</div>
+        <div class="check-group">
+          <label><input type="checkbox" name="手順との関連" value="①手順がない"> ① 手順がない</label>
+          <label><input type="checkbox" name="手順との関連" value="②知らなかった"> ② 知らなかった</label>
+          <label><input type="checkbox" name="手順との関連" value="③遵守せず"> ③ 遵守せず</label>
+          <label><input type="checkbox" name="手順との関連" value="④不慣れ"> ④ 不慣れ</label>
+          <label><input type="checkbox" name="手順との関連" value="⑤手順に従っていた"> ⑤ 手順に従っていた</label>
+          <label><input type="checkbox" name="手順との関連" value="⑥その他"> ⑥ その他</label>
+        </div>
+      </div>
+
+      <div class="sub-section">
+        <div class="sub-section-title">不適切な記入</div>
+        <div class="check-group">
+          <label><input type="checkbox" name="不適切な記入" value="①間違い"> ① 間違い</label>
+          <label><input type="checkbox" name="不適切な記入" value="②誤記"> ② 誤記</label>
+          <label><input type="checkbox" name="不適切な記入" value="③不明瞭な記載"> ③ 不明瞭な記載</label>
+          <label><input type="checkbox" name="不適切な記入" value="④その他"> ④ その他</label>
+        </div>
+      </div>
+
+      <div class="sub-section">
+        <div class="sub-section-title">確認不足</div>
+        <label class="field-label" style="margin-bottom:6px;">種類（複数選択可）</label>
+        <div class="check-group">
+          <label><input type="checkbox" name="確認不足種類" value="①指示"> ① 指示</label>
+          <label><input type="checkbox" name="確認不足種類" value="②処方箋"> ② 処方箋</label>
+          <label><input type="checkbox" name="確認不足種類" value="③カルテ"> ③ カルテ</label>
+          <label><input type="checkbox" name="確認不足種類" value="④ラベル"> ④ ラベル</label>
+          <label><input type="checkbox" name="確認不足種類" value="⑤照射録・検査伝票"> ⑤ 照射録・検査伝票</label>
+          <label><input type="checkbox" name="確認不足種類" value="⑥ベッドネーム"> ⑥ ベッドネーム</label>
+          <label><input type="checkbox" name="確認不足種類" value="⑦呼称"> ⑦ 呼称</label>
+          <label><input type="checkbox" name="確認不足種類" value="⑧生年月日"> ⑧ 生年月日</label>
+          <label><input type="checkbox" name="確認不足種類" value="⑨その他"> ⑨ その他</label>
+        </div>
+        <label class="field-label" style="margin-top:12px; margin-bottom:6px;">内容（複数選択可）</label>
+        <div class="check-group">
+          <label><input type="checkbox" name="確認不足内容" value="①見落とし"> ① 見落とし</label>
+          <label><input type="checkbox" name="確認不足内容" value="②思い込み"> ② 思い込み</label>
+          <label><input type="checkbox" name="確認不足内容" value="③見誤り"> ③ 見誤り</label>
+          <label><input type="checkbox" name="確認不足内容" value="④その他"> ④ その他</label>
+        </div>
+      </div>
+
+      <div class="sub-section">
+        <div class="sub-section-title">患者観察の不足</div>
+        <div class="check-group">
+          <label><input type="checkbox" name="患者観察の不足" value="①手術・処置・検査中あるいは前後の状態"> ① 手術・処置・検査中あるいは前後の状態</label>
+          <label><input type="checkbox" name="患者観察の不足" value="②投薬・輸血中あるいは直後の状態"> ② 投薬・輸血中あるいは直後の状態</label>
+          <label><input type="checkbox" name="患者観察の不足" value="③その他"> ③ その他</label>
+        </div>
+      </div>
+
+      <div class="sub-section">
+        <div class="sub-section-title">その他の要因</div>
+        <div class="check-group">
+          <label><input type="checkbox" name="その他の要因" value="①連携不足"> ① 連携不足</label>
+          <label><input type="checkbox" name="その他の要因" value="②伝達不足"> ② 伝達不足</label>
+          <label><input type="checkbox" name="その他の要因" value="③知識不足"> ③ 知識不足</label>
+          <label><input type="checkbox" name="その他の要因" value="④説明不足"> ④ 説明不足</label>
+          <label><input type="checkbox" name="その他の要因" value="⑤対象に問題"> ⑤ 対象に問題</label>
+          <label><input type="checkbox" name="その他の要因" value="⑥避けられない偶発症"> ⑥ 避けられない偶発症</label>
+          <label><input type="checkbox" name="その他の要因" value="⑦その他"> ⑦ その他</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑦ 背景 -->
+  <div class="section">
+    <div class="section-header">背景</div>
+    <div class="field-group">
+      <div class="sub-section">
+        <div class="sub-section-title">ハード面</div>
+        <div class="check-group">
+          <label><input type="checkbox" name="背景ハード" value="①構造・設備"> ① 構造・設備</label>
+          <label><input type="checkbox" name="背景ハード" value="②機器メンテナンス"> ② 機器メンテナンス</label>
+          <label><input type="checkbox" name="背景ハード" value="③その他"> ③ その他</label>
+        </div>
+      </div>
+      <div class="sub-section">
+        <div class="sub-section-title">ソフト面</div>
+        <div class="check-group">
+          <label><input type="checkbox" name="背景ソフト" value="①マニュアル"> ① マニュアル</label>
+          <label><input type="checkbox" name="背景ソフト" value="②教育"> ② 教育</label>
+          <label><input type="checkbox" name="背景ソフト" value="③スタッフ連携"> ③ スタッフ連携</label>
+          <label><input type="checkbox" name="背景ソフト" value="④勤務体制"> ④ 勤務体制</label>
+          <label><input type="checkbox" name="背景ソフト" value="⑤報告指示"> ⑤ 報告指示</label>
+          <label><input type="checkbox" name="背景ソフト" value="⑥説明"> ⑥ 説明</label>
+          <label><input type="checkbox" name="背景ソフト" value="⑦その他"> ⑦ その他</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑧ 概要 -->
+  <div class="section">
+    <div class="section-header">概要（5W1H）</div>
+    <div class="field-group">
+      <label class="field-label">いつ・どこで・誰が・何を・なぜ・どのように、を具体的に記載してください</label>
+      <textarea name="概要" placeholder="例：7月27日 14時頃、2階病棟廊下にて、患者○○氏（75歳・男性）が…" required></textarea>
+      <p class="hint">書き足りないことや個人的な対策があれば、こちらの欄に追記してください。</p>
+    </div>
+  </div>
+
+  <!-- 送信ボタン -->
+  <div class="submit-area">
+    <button type="submit">報告書を送信する</button>
+    <p class="hint" style="margin-top:12px; text-align:center;">送信後、担当者にメールで通知されます</p>
+  </div>
+
+</form>
+
+
+<script>
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMG8nY4-_mCZDJesLI1mFZ3pUTc1GSxEp2wpvMm4ycredsQdaEih2kcXFpul0b5-UnSQ/exec';
+
+document.getElementById('reportForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  // 前回エラーをクリア
+  document.querySelectorAll('.error-msg').forEach(el => el.remove());
+  document.querySelectorAll('.field-has-error').forEach(el => el.classList.remove('field-has-error'));
+  var summary = document.getElementById('error-summary');
+  var errorList = document.getElementById('error-list');
+  errorList.innerHTML = '';
+  summary.style.display = 'none';
+
+  var errors = [];
+  var firstEl = null;
+
+  function checkRadio(name, label) {
+    var els = document.querySelectorAll('input[name="' + name + '"]');
+    var checked = Array.from(els).some(function(r){ return r.checked; });
+    if (!checked && els.length > 0) {
+      var container = els[0].closest('.field-group');
+      if (container) {
+        container.classList.add('field-has-error');
+        var msg = document.createElement('p');
+        msg.className = 'error-msg';
+        msg.textContent = '⚠ ' + label + 'を選択してください';
+        container.appendChild(msg);
+        if (!firstEl) firstEl = container;
+      }
+      errors.push(label);
+    }
+  }
+
+  function checkText(name, label) {
+    var el = document.querySelector('[name="' + name + '"]');
+    if (el && el.value.trim() === '') {
+      var container = el.closest('.field-group') || el.parentElement;
+      container.classList.add('field-has-error');
+      var msg = document.createElement('p');
+      msg.className = 'error-msg';
+      msg.textContent = '⚠ ' + label + 'を入力してください';
+      el.after(msg);
+      if (!firstEl) firstEl = container;
+      errors.push(label);
+    }
+  }
+
+  checkRadio('レベル', 'レベル');
+  checkText('発生年月日', '発生年月日');
+  checkRadio('発生曜日区分', '発生曜日区分');
+  checkRadio('発生時間帯', '発生時間帯');
+  checkRadio('当該部署', '当該部署');
+  checkRadio('発生場所', '発生場所');
+  checkText('患者氏名', '患者氏名');
+  checkText('患者年齢', '患者年齢');
+  checkRadio('患者性別', '患者性別');
+  checkRadio('入院状況', '入院状況');
+  checkRadio('報告者区分', '報告者の区分');
+  checkText('報告者氏名', '報告者氏名');
+  checkRadio('職種', '職種');
+  checkRadio('経験年数', '経験年数');
+  checkText('概要', '概要（5W1H）');
+
+  if (errors.length > 0) {
+    errors.forEach(function(label) {
+      var li = document.createElement('li');
+      li.textContent = label;
+      errorList.appendChild(li);
+    });
+    summary.style.display = 'block';
+    summary.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+
+  // バリデーション通過 → Apps Scriptへ送信
+  var btn = document.querySelector('button[type="submit"]');
+  btn.textContent = '送信中...';
+  btn.disabled = true;
+
+  var formData = new FormData(document.getElementById('reportForm'));
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: formData
+  })
+  .then(function() {
+    window.location.href = 'https://yuichi-takasu.github.io/incident-report/thanks.html';
+  })
+  .catch(function() {
+    btn.textContent = '報告書を送信する';
+    btn.disabled = false;
+    alert('送信に失敗しました。もう一度お試しください。');
+  });
+});
+</script>
+</body>
+</html>
