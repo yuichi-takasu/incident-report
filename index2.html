@@ -775,7 +775,7 @@
 
 
 <script>
-var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwMG8nY4-_mCZDJesLI1mFZ3pUTc1GSxEp2wpvMm4ycredsQdaEih2kcXFpul0b5-UnSQ/exec';
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyLTg5DMqFLtuf6-ausF8ahDoasrEOi-C_7Ub0S3AHjkSCkxXeRc0Lo0IFItYCgg7OG8w/exec';
 
 document.getElementById('reportForm').addEventListener('submit', function(e) {
   e.preventDefault();
@@ -854,10 +854,11 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
   btn.disabled = true;
 
   var formData = new FormData(document.getElementById('reportForm'));
+  var params = new URLSearchParams(formData);
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     mode: 'no-cors',
-    body: formData
+    body: params
   })
   .then(function() {
     window.location.href = 'https://yuichi-takasu.github.io/incident-report/thanks.html';
