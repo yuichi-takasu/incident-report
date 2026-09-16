@@ -441,9 +441,9 @@
         <div class="sub-section-title">転倒・転落</div>
         <label class="field-label" style="margin-bottom:6px;">状況</label>
         <div class="radio-group">
-          <label><input type="radio" name="転倒転落状況" value="①直接関与" onclick="toggleRadio(this)"> ① 直接関与</label>
-          <label><input type="radio" name="転倒転落状況" value="②患者行動" onclick="toggleRadio(this)"> ② 患者行動</label>
-          <label><input type="radio" name="転倒転落状況" value="③その他" onclick="toggleRadio(this)"> ③ その他</label>
+          <label><input type="radio" name="転倒転落状況" value="①直接関与" onmousedown="radioPreClick(this)" ontouchstart="radioPreClick(this)" onclick="toggleRadio(this)"> ① 直接関与</label>
+          <label><input type="radio" name="転倒転落状況" value="②患者行動" onmousedown="radioPreClick(this)" ontouchstart="radioPreClick(this)" onclick="toggleRadio(this)"> ② 患者行動</label>
+          <label><input type="radio" name="転倒転落状況" value="③その他" onmousedown="radioPreClick(this)" ontouchstart="radioPreClick(this)" onclick="toggleRadio(this)"> ③ その他</label>
         </div>
         <label class="field-label" style="margin-top:12px; margin-bottom:6px;">転倒リスクスコア</label>
         <div class="radio-group">
@@ -791,13 +791,12 @@ document.getElementById('reportForm').addEventListener('submit', function(e) {
   var errors = [];
   var firstEl = null;
 
+  function radioPreClick(el) {
+    el._wasChecked = el.checked;
+  }
   function toggleRadio(el) {
-    if (el.dataset.wasChecked === 'true') {
+    if (el._wasChecked) {
       el.checked = false;
-      el.dataset.wasChecked = 'false';
-    } else {
-      document.querySelectorAll('input[name="' + el.name + '"]').forEach(function(r){ r.dataset.wasChecked = 'false'; });
-      el.dataset.wasChecked = 'true';
     }
   }
 
